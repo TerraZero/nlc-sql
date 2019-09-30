@@ -1,0 +1,7 @@
+{
+  "commands": "commands/**/*.js",
+  "services": [
+    "src/Storage.js",
+    "src/Manager.js"
+  ]
+}

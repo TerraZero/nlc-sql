@@ -1,0 +1,17 @@
+{
+  "name": "nlc-sql",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "debug": "ncl sql:test",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "TerraZero",
+  "license": "ISC",
+  "dependencies": {
+    "glob": "^7.1.4",
+    "knex": "^0.19.3",
+    "sqlite3": "^4.1.0"
+  }
+}

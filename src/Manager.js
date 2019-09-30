@@ -46,7 +46,7 @@ module.exports = class Manager {
           this._definitions[name].storage = sql[index][name].storage || this._definitions[name].storage || 'sql.storage.default';
         }
       }
-      this.trigger('sql:definitions', this._definitions);
+      manager.trigger('sql:definitions', this, this._definitions);
     }
     return this._definitions;
   }

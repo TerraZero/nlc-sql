@@ -1,0 +1,32 @@
+{
+  "mount": "sql",
+  "schema": {
+    "type": "object",
+    "patternProperties": {
+      "^.*$": {
+        "type": "object",
+        "properties": {
+          "models": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "object",
+            "properties": {
+              "client": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "client"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "models",
+          "definition"
+        ]
+      }
+    }
+  }
+}

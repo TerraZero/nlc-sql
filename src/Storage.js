@@ -177,7 +177,7 @@ module.exports = class Storage {
    * @returns {Promise}
    */
   doSave(entity) {
-    if (!entity._changed) return Promise.resolve();
+    if (!entity._changed && !entity.isNew) return Promise.resolve();
 
     let promise = null;
     if (entity.isNew) {

@@ -1,7 +1,7 @@
-const NLC = require('nlc');
+const Command = require('nlc/src/Command');
 const SQL = require('../index');
 
-module.exports = class SQLCommand extends NLC.Command {
+module.exports = class SQLCommand extends Command {
 
   init() {
     return this.command('sql <command>')

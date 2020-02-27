@@ -1,7 +1,9 @@
-const SQL = require('../../index');
-const Knex = require('knex');
+import ModelField from 'nlc-sql/src/types/ModelField';
+import Model from 'nlc-sql/src/Model';
 
-module.exports = class ReferenceField extends SQL.types.ModelField {
+
+
+export default class ReferenceField extends ModelField {
 
   /**
    * @returns {Object<string, string>}
@@ -16,8 +18,8 @@ module.exports = class ReferenceField extends SQL.types.ModelField {
   }
 
   /**
-   * @param {Knex.CreateTableBuilder} table
-   * @param {SQL.types.ModelField} field
+   * @param {import('Knex').CreateTableBuilder} table
+   * @param {ModelField} field
    */
   static createMulti(table, field) {
     this.addMultiFields(table);
@@ -28,27 +30,23 @@ module.exports = class ReferenceField extends SQL.types.ModelField {
   /**
    * @param {any} value
    * @param {Object} object
-   * @param {SQL.types.ModelField} field
+   * @param {ModelField} field
    * @returns {any}
    */
   static transform(value, object = {}, field = null) {
-    if (value instanceof SQL.Model) {
-      if (value.struct.name === field.definition.options.reference) {
-        if (value.isNew) {
-          return {
-            value: null,
-            type: null,
-            entity: value,
-          };
-        } else {
-          value = {
-            value: value.id,
-            type: value.struct.name,
-            entity: value,
-          };
-        }
+    if (value instanceof field.entity._manager.getModel(field.definition.options.reference)) {
+      if (value.isNew) {
+        return {
+          value: null,
+          type: null,
+          entity: value,
+        };
       } else {
-        throw new SQL.errors.SQLTypeError('Wrong entity type');
+        value = {
+          value: value.id,
+          type: value.struct.model,
+          entity: value,
+        };
       }
     }
 
@@ -64,8 +62,8 @@ module.exports = class ReferenceField extends SQL.types.ModelField {
   }
 
   /**
-   * @param {SQL.Model} entity
-   * @param {SQL.types.ModelField} field
+   * @param {Model} entity
+   * @param {ModelField} field
    * @return {Object<string, any>[]}
    */
   static sql(entity, field) {
@@ -86,11 +84,25 @@ module.exports = class ReferenceField extends SQL.types.ModelField {
 
       if (values[index].entity !== null) {
         row.value = values[index].entity.id;
-        row.type = values[index].entity.struct.name;
+        row.type = values[index].entity.struct.model;
       }
       data.push(row);
     }
     return data;
+  }
+
+  async getEntity(index = null) {
+    if (index === null) {
+      const values = [];
+      for (const i in this._data) {
+        values.push(await this.getEntity(i));
+      }
+      return values;
+    }
+    if (this._data[index].entity === null) {
+      this._data[index].entity = await this.entity._manager.storage.single(this._data[index].type, this._data[index].value);
+    }
+    return this._data[index].entity;
   }
 
 }

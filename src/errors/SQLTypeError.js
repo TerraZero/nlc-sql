@@ -1,3 +1,5 @@
-const SQL = require('../../index');
+import SQLError from 'nlc-sql/src/errors/SQLError';
 
-module.exports = class SQLTypeError extends SQL.errors.SQLError { }
+
+
+export default class SQLTypeError extends SQLError { }

@@ -1,7 +1,36 @@
 {
-  "commands": "commands/**/*.js",
-  "services": [
-    "src/Storage.js",
-    "src/Manager.js"
-  ]
+  "services": {
+    "nlc.sql": {
+      "class": "src/SQLManager",
+      "arguments": [
+        "@nlc.core",
+        "@nlc.sql.model.collection"
+      ]
+    },
+    "nlc.sql.storage": {
+      "class": "src/Storage",
+      "lazy": true,
+      "arguments": [
+        "@nlc.sql"
+      ]
+    },
+    "nlc.sql.model.collection": {
+      "factory": {
+        "class": "@nlc.util.collection.factory",
+        "method": "create"
+      },
+      "arguments": [
+        "models/*.js",
+        true
+      ],
+      "tags": [
+        {
+          "name": "lazy"
+        },
+        {
+          "name": "collection"
+        }
+      ]
+    }
+  }
 }

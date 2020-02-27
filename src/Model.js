@@ -1,16 +1,19 @@
-const SQL = require('../index');
+import 'nlc-sql/types';
+import SQLError from 'nlc-sql/src/errors/SQLError';
 
-module.exports = class Model {
+
+
+export default class Model {
 
   /**
-   * @returns {SQL.FieldDefinition[]}
+   * @returns {T_FieldDefinition[]}
    */
   static define() {
-    throw new SQL.errors.SQLError('No fields defined for model');
+    throw new SQLError('No fields defined for model');
   }
 
   /**
-   * @returns {Map<string, SQL.FieldDefinition>}
+   * @returns {Map<string, T_FieldDefinition>}
    */
   static get fields() {
     if (this._fields === undefined) {
@@ -23,21 +26,15 @@ module.exports = class Model {
   }
 
   /**
-   * @returns {string}
-   */
-  static get name() {
-    return '';
-  }
-
-  /**
-   * @param {Object} data
-   * @returns {SQL.Model}
+   * @param {Model} data
    */
   static create(data) {
     return new this(data);
   }
 
   constructor(data = {}) {
+    /** @type {import('nlc-sql/src/SQLManager').default} */
+    this._manager = NLC.service('nlc.sql');
     this._fields = new Map();
     for (const [name, definition] of this.struct.fields) {
       this._fields.set(name, new definition.field(definition, this));
@@ -50,14 +47,14 @@ module.exports = class Model {
   }
 
   /**
-   * @returns {typeof SQL.Model}
+   * @returns {typeof Model}
    */
   get struct() {
     return this.constructor;
   }
 
   /**
-   * @returns {Map<string, SQL.types.ModelField>}
+   * @returns {Map<string, import('nlc-sql/src/types/ModelField').default>}
    */
   get fields() {
     return this._fields;
@@ -92,6 +89,9 @@ module.exports = class Model {
   }
 
   /**
+   * index null - for replace current value
+   * index -1 - to add another item (multi only)
+   * index [number] - to overwrite on a defined point (multi only)
    * @param {string} field
    * @param {any} value
    * @param {number} index
@@ -117,6 +117,10 @@ module.exports = class Model {
    */
   clear(field) {
     this.fields.get(field).clear();
+  }
+
+  toString() {
+    return (this.struct.model !== undefined ? this.struct.model : this.struct.name.toLowerCase()) + '[' + (this.isNew ? '#' : this.id) + ']';
   }
 
 }

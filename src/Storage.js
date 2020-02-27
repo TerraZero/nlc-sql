@@ -1,44 +1,34 @@
-const SQL = require('../index');
+import 'nlc-sql/types';
 
-module.exports = class Storage {
-
-  static get service() {
-    return {
-      name: 'sql.storage.default',
-      dependencies: ['sql.manager'],
-    };
-  }
-
-  static create(manager, sqlmanager) {
-    return new this(sqlmanager);
-  }
+export default class Storage {
 
   /**
-   * @param {SQL.Manager} manager
+   * @param {import('nlc-sql/src/SQLManager').default} manager
    */
   constructor(manager) {
     this._manager = manager;
+    this._logger = manager.logger.create('storage');
     this._cache = {};
     this._unsaved = [];
   }
 
   /**
-   * @returns {Object<string, Object<number, SQL.Model>>}
+   * @returns {Object<string, Object<number, import('nlc-sql/src/Model').default>>}
    */
   get cache() {
     return this._cache;
   }
 
   /**
-   * @param {typeof SQL.Model} model
-   * @param {SQL.FieldDefinition} field
+   * @param {typeof import('nlc-sql/src/Model').default} model
+   * @param {FieldDefinition} field
    * @returns {string}
    */
   getTable(model, field = null) {
     if (field === null) {
-      return model.name;
+      return model.name.toLowerCase();
     } else {
-      return model.name + '__' + field.name;
+      return (model.name + '__' + field.name).toLowerCase();
     }
   }
 
@@ -46,9 +36,10 @@ module.exports = class Storage {
    * @param {string} model
    * @param {Object<string, any>} data
    * @param {boolean} tmp
-   * @returns {SQL.Model}
+   * @returns {import('nlc-sql/src/Model').default}
    */
   create(model, data, tmp = false) {
+    this._logger.trace('Create new entity ' + model + (tmp ? ' temporary' : ''));
     const entity = this._manager.getModel(model).create(data);
 
     if (!tmp) {
@@ -58,9 +49,9 @@ module.exports = class Storage {
   }
 
   /**
-   * @param {string|SQL.EntityKey} model
+   * @param {string|T_EntityKey} model
    * @param {(number|number[])} ids
-   * @returns {Promise<SQL.Model>}
+   * @returns {Promise<import('nlc-sql/src/Model').default>}
    */
   async single(model, id) {
     if (typeof model === 'object') {
@@ -76,14 +67,15 @@ module.exports = class Storage {
   /**
    * @param {string} model
    * @param {(number|number[])} ids
-   * @returns {Promise<Object<number, SQL.Model>>}
+   * @returns {Promise<Object<number, import('nlc-sql/src/Model').default>>}
    */
   async load(model, ids = null) {
-    const model_class = this._manager.getModel(model);
-    this.cache[model] = this.cache[model] || {};
     if (!Array.isArray(ids)) {
       ids = [ids];
     }
+    this._logger.trace('Load entity ' + model + ' (' + ids.join(', ') + ')');
+    const model_class = this._manager.getModel(model);
+    this.cache[model] = this.cache[model] || {};
 
     const entities = {};
     const unloaded = [];
@@ -116,7 +108,7 @@ module.exports = class Storage {
   }
 
   /**
-   * @param {(SQL.Model|SQL.Model[])} entity
+   * @param {(import('nlc-sql/src/Model').default|import('nlc-sql/src/Model').default[])} entity
    * @returns {Promise}
    */
   async save(entity) {
@@ -173,11 +165,13 @@ module.exports = class Storage {
   }
 
   /**
-   * @param {SQL.Model} entity
+   * @param {import('nlc-sql/src/Model').default} entity
    * @returns {Promise}
    */
   doSave(entity) {
     if (!entity._changed && !entity.isNew) return Promise.resolve();
+
+    this._logger.trace('Save entity ' + entity.toString());
 
     let promise = null;
     if (entity.isNew) {
@@ -191,7 +185,7 @@ module.exports = class Storage {
     return promise.then(() => {
       const promises = [];
 
-      for (const [name, field] of entity.fields) {
+      for (const [, field] of entity.fields) {
         if (!field.definition.options.multi) continue;
 
         const row = this._manager.query(this.getTable(entity.struct, field.definition)).where('reference', entity.id).delete();
@@ -212,7 +206,7 @@ module.exports = class Storage {
   }
 
   /**
-   * @param {(SQL.Model|SQL.Model[])} entity
+   * @param {(import('nlc-sql/src/Model').default|import('nlc-sql/src/Model').default[])} entity
    * @returns {Promise}
    */
   delete(entity) {
@@ -228,13 +222,14 @@ module.exports = class Storage {
   }
 
   /**
-   * @param {SQL.Model} entity
+   * @param {import('nlc-sql/src/Model').default} entity
    * @returns {Promise}
    */
   doDelete(entity) {
+    this._logger.trace('Delete entity ' + entity.toString());
     const promises = [];
 
-    for (const [name, field] of entity.fields) {
+    for (const [, field] of entity.fields) {
       if (!field.definition.options.multi) continue;
       promises.push(this._manager.query(this.getTable(entity.struct, field.definition)).where('reference', entity.id).delete());
     }
@@ -265,14 +260,16 @@ module.exports = class Storage {
   }
 
   /**
-   * @param {typeof SQL.Model} model
+   * @param {typeof import('nlc-sql/src/Model').default} model
    * @param {number} id
    * @returns {Promise}
    */
   doFastDelete(model, id) {
+    this._logger.trace('Fast delete entity ' + entity.toString());
+
     const promises = [];
 
-    for (const [name, field] of model.fields) {
+    for (const [, field] of model.fields) {
       if (!field.options.multi) continue;
       promises.push(this._manager.query(this.getTable(model, field)).where('reference', id).delete());
     }

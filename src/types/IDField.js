@@ -1,11 +1,12 @@
-const SQL = require('../../index');
-const Knex = require('knex');
+import ModelField from 'nlc-sql/src/types/ModelField';
 
-module.exports = class IDField extends SQL.types.ModelField {
+
+
+export default class IDField extends ModelField {
 
   /**
-   * @param {Knex.CreateTableBuilder} table
-   * @param {SQL.types.ModelField} field
+   * @param {import('Knex').CreateTableBuilder} table
+   * @param {ModelField} field
    */
   static createSingle(table, field) {
     table.increments(field.name);

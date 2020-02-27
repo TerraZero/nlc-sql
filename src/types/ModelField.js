@@ -1,7 +1,8 @@
-const SQL = require('../../index');
-const Knex = require('knex');
+import SQLTypeError from 'nlc-sql/src/errors/SQLTypeError';
 
-module.exports = class ModelField {
+
+
+export default class ModelField {
 
   /**
    * @returns {Object<string, string>}
@@ -18,23 +19,23 @@ module.exports = class ModelField {
   }
 
   /**
-   * @param {Knex.CreateTableBuilder} table
-   * @param {SQL.types.ModelField} field
+   * @param {import('knex').CreateTableBuilder} table
+   * @param {ModelField} field
    */
   static createSingle(table, field) {
-    throw new SQL.errors.SQLTypeError('No implementation');
+    throw new SQLTypeError('No implementation');
   }
 
   /**
-   * @param {Knex.CreateTableBuilder} table
-   * @param {SQL.types.ModelField} field
+   * @param {import('knex').CreateTableBuilder} table
+   * @param {ModelField} field
    */
   static createMulti(table, field) {
-    throw new SQL.errors.SQLTypeError('No implementation');
+    throw new SQLTypeError('No implementation');
   }
 
   /**
-   * @param {Knex.CreateTableBuilder} table
+   * @param {import('knex').CreateTableBuilder} table
    */
   static addMultiFields(table) {
     table.integer('reference');
@@ -44,7 +45,7 @@ module.exports = class ModelField {
 
   /**
    * @param {any} value
-   * @param {SQL.types.ModelField} field
+   * @param {ModelField} field
    * @returns {boolean}
    */
   static valid(value, field = null) {
@@ -54,7 +55,7 @@ module.exports = class ModelField {
   /**
    * @param {any} value
    * @param {Object} object
-   * @param {SQL.types.ModelField} field
+   * @param {ModelField} field
    * @returns {any}
    */
   static transform(value, object = {}, field = null) {
@@ -73,7 +74,7 @@ module.exports = class ModelField {
    * @param {string} name
    * @param {Object} options
    * @param {boolean} options.multi
-   * @param {typeof SQL.Model} options.reference
+   * @param {string} options.reference
    */
   static create(name, options = {}) {
     return {
@@ -84,8 +85,8 @@ module.exports = class ModelField {
   }
 
   /**
-   * @param {SQL.Model} entity
-   * @param {SQL.types.ModelField} field
+   * @param {import('nlc-sql/src/Model').default} entity
+   * @param {ModelField} field
    * @return {Object<string, any>[]}
    */
   static sql(entity, field) {
@@ -109,8 +110,8 @@ module.exports = class ModelField {
   }
 
   /**
-   * @param {SQL.FieldDefinition} definition
-   * @param {SQL.Model} entity
+   * @param {T_FieldDefinition} definition
+   * @param {import('nlc-sql/src/Model').default} entity
    */
   constructor(definition, entity) {
     this._definition = definition;
@@ -119,21 +120,21 @@ module.exports = class ModelField {
   }
 
   /**
-   * @returns {typeof SQL.types.ModelField}
+   * @returns {typeof ModelField}
    */
   get struct() {
     return this.constructor;
   }
 
   /**
-   * @returns {SQL.FieldDefinition}
+   * @returns {T_FieldDefinition}
    */
   get definition() {
     return this._definition;
   }
 
   /**
-   * @returns {SQL.Model}
+   * @returns {import('nlc-sql/src/Model').default}
    */
   get entity() {
     return this._entity;
@@ -141,17 +142,57 @@ module.exports = class ModelField {
 
   /**
    * @param {any} value
-   * @param {number} index
+   * @param {boolean} error
+   * @returns {boolean}
+   */
+  isValidValue(value, error = true) {
+    if (this.definition.options.multi) {
+      if (!Array.isArray(value)) value = [value];
+
+      for (const item of value) {
+        if (!this.struct.valid(item, this)) {
+          if (error) {
+            throw new SQLTypeError('The value :value is not valid for field :field', {
+              ':value': item,
+              ':field': this.definition.name,
+            });
+          } else {
+            return false;
+          }
+        }
+      }
+    } else {
+      if (!this.struct.valid(value, this)) {
+        if (error) {
+          throw new SQLTypeError('The value :value is not valid for field :field', {
+            ':value': value,
+            ':field': this.definition.name,
+          });
+        } else {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * @param {any} value
+   * @param {number|null} index
    * @returns {this}
    */
-  set(value, index = 0) {
+  set(value, index = null) {
+    this.isValidValue(value);
     this.entity._changed = true;
+    if (index === null) {
+      this._data = null;
+    }
+
     if (Array.isArray(value)) {
       for (const i in value) {
         this.set(value[i], (index < 0 ? -1 : index + Number.parseInt(i)));
       }
     } else {
-      if (!this.struct.valid(value, this)) throw new SQL.errors.SQLTypeError('No valid value');
       if (this.definition.options.multi) {
         this._data = this._data || [];
         if (index < 0 || index >= this._data.length) {
@@ -178,11 +219,20 @@ module.exports = class ModelField {
       const values = [];
 
       for (const value of this._data) {
-        values.push(value[this.struct.props[prop]]);
+        values.push(this.load(value, prop));
       }
       return values;
     }
-    return this._data[index][prop];
+    return this.load(this._data[index], prop);
+  }
+
+  /**
+   * @param {any} value
+   * @param {string} prop
+   * @returns {any}
+   */
+  async load(value, prop = null) {
+    return value[this.struct.props[prop]];
   }
 
   /**

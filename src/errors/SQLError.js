@@ -1,3 +1,5 @@
-const NLC = require('nlc');
+import Err from 'nlc-util/src/errors/Err';
 
-module.exports = class SQLError extends NLC.errors.Error { }
+
+
+export default class SQLError extends Err { }

@@ -5,12 +5,13 @@
   "main": "index.js",
   "scripts": {
     "debug": "ncl sql:test",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preinstall": "localdev uninstall T:/projects nlc-util nlc",
+    "postinstall": "localdev install T:/projects nlc-util nlc"
   },
   "author": "TerraZero",
   "license": "ISC",
   "dependencies": {
-    "glob": "^7.1.4",
     "knex": "^0.19.5",
     "sqlite3": "^4.1.0"
   }

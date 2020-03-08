@@ -6,8 +6,8 @@
   "scripts": {
     "debug": "ncl sql:test",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "preinstall": "localdev uninstall T:/projects nlc-util nlc",
-    "postinstall": "localdev install T:/projects nlc-util nlc"
+    "preinstall": "localdev uninstall nlc-util nlc",
+    "postinstall": "localdev install nlc-util nlc"
   },
   "author": "TerraZero",
   "license": "ISC",

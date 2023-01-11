@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "glob": "^7.1.4",
-    "knex": "^0.19.5",
+    "knex": "^2.4.0",
     "sqlite3": "^4.1.0"
   }
 }
